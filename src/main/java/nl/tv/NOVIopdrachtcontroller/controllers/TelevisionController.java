@@ -1,7 +1,9 @@
 package nl.tv.NOVIopdrachtcontroller.controllers;
 
 
+import nl.tv.NOVIopdrachtcontroller.model.Television;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,58 +13,51 @@ import java.util.List;
 @RequestMapping("product")
 @RestController
 public class TelevisionController {
-    List<String> allTv = new ArrayList<>();
+   private ArrayList<Television> allTv = new ArrayList<>();
     @Autowired
     private ExceptionController exceptionController;
 
     @GetMapping
-    public ResponseEntity<String> getAllTelevisions() {
-        // Implementatie voor het ophalen van alle televisies
-        return ResponseEntity.ok("Get all televisions " + allTv);
+    public ResponseEntity<ArrayList<Television>> getAllTelevisions() {
+        return new ResponseEntity<>(this.allTv, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<String> getTelevisionById(@PathVariable int id) {
-
-        // Implementatie voor het ophalen van één televisie op basis van ID
+    public ResponseEntity<Television> getTelevisionById(@PathVariable int id) {
         try {
-            return ResponseEntity.ok("Get television by id: " + id + " is " + allTv.get(id));
+            return ResponseEntity.ok(allTv.get(id));
         } catch (IndexOutOfBoundsException ex) {
-            // Als de index niet wordt gevonden, roep dan de exception handler op
+
             return exceptionController.handleRecordNotFoundException(new RecordNotFoundException("TV not found"));
+
         }
     }
 
     @PostMapping
-    public ResponseEntity<String> createTelevision(@RequestParam String tv) {
-        // Implementatie voor het aanmaken van één televisie
-        allTv.add(tv);
-        return ResponseEntity.created(null).body("Television created is " + tv);
-    }
+    public ResponseEntity<Television> createTelevision(@RequestBody Television tv) {
+        this.allTv.add(tv);
+        return new ResponseEntity<>(tv, HttpStatus.CREATED);    }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateTelevision(@PathVariable int id, @RequestParam String tv) {
+    public ResponseEntity<Television> updateTelevision(@PathVariable int id, @RequestBody Television tv) {
 
-        // Implementatie voor het bijwerken van één televisie op basis van ID
         try {
-            allTv.set(id, tv);
-            return ResponseEntity.ok("Television updated: " + id + " to " + allTv.get(id));
+            this.allTv.set(id, tv);
+            return new ResponseEntity<>(tv, HttpStatus.OK);
         } catch (IndexOutOfBoundsException ex) {
-            // Als de index niet wordt gevonden, roep dan de exception handler op
-            return exceptionController.handleRecordNotFoundException(new RecordNotFoundException("TV not found"));
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteTelevision(@PathVariable int id) {
-        // Implementatie voor het verwijderen van één televisie op basis van ID
+    public ResponseEntity<Television> deleteTelevision(@PathVariable int id) {
         try {
-            String currentVal = allTv.get(id);
+            Television currentVal = allTv.get(id);
             allTv.remove(id);
-            return ResponseEntity.ok(currentVal + " Television is verwijderd");
+            return new ResponseEntity<>(currentVal, HttpStatus.OK);
         } catch (IndexOutOfBoundsException ex) {
-            // Als de index niet wordt gevonden, roep dan de exception handler op
             return exceptionController.handleRecordNotFoundException(new RecordNotFoundException("TV not found"));
+
         }
     }
 }
