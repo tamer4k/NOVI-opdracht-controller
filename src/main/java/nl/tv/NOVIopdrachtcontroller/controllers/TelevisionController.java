@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RequestMapping("product")
 @RestController
@@ -16,7 +17,22 @@ public class TelevisionController {
    private ArrayList<Television> allTv = new ArrayList<>();
     @Autowired
     private ExceptionController exceptionController;
+    @GetMapping("/search")
+    public ResponseEntity<List<Television>> searchTelevisionByName(@RequestParam String name) {
+        List<Television> searchResults = new ArrayList<>();
 
+        for (Television tv : allTv) {
+            if (tv.getName().equalsIgnoreCase(name)) {
+                searchResults.add(tv);
+            }
+        }
+
+        if (searchResults.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(searchResults);
+    }
     @GetMapping
     public ResponseEntity<ArrayList<Television>> getAllTelevisions() {
         return new ResponseEntity<>(this.allTv, HttpStatus.OK);
@@ -35,8 +51,10 @@ public class TelevisionController {
 
     @PostMapping
     public ResponseEntity<Television> createTelevision(@RequestBody Television tv) {
+        tv.setId(UUID.randomUUID());
         this.allTv.add(tv);
-        return new ResponseEntity<>(tv, HttpStatus.CREATED);    }
+        return new ResponseEntity<>(tv, HttpStatus.CREATED);
+    }
 
     @PutMapping("/{id}")
     public ResponseEntity<Television> updateTelevision(@PathVariable int id, @RequestBody Television tv) {
