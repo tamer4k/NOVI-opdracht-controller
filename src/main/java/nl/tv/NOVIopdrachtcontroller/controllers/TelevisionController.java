@@ -2,6 +2,7 @@ package nl.tv.NOVIopdrachtcontroller.controllers;
 
 
 import nl.tv.NOVIopdrachtcontroller.model.Television;
+import nl.tv.NOVIopdrachtcontroller.repositories.TelevisionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,71 +12,47 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@RequestMapping("product")
+@RequestMapping("televisions")
 @RestController
 public class TelevisionController {
-   private ArrayList<Television> allTv = new ArrayList<>();
     @Autowired
-    private ExceptionController exceptionController;
-    @GetMapping("/search")
-    public ResponseEntity<List<Television>> searchTelevisionByName(@RequestParam String name) {
-        List<Television> searchResults = new ArrayList<>();
+   private TelevisionRepository televisionRepository;
 
-        for (Television tv : allTv) {
-            if (tv.getName().equalsIgnoreCase(name)) {
-                searchResults.add(tv);
-            }
-        }
-
-        if (searchResults.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(searchResults);
-    }
     @GetMapping
-    public ResponseEntity<ArrayList<Television>> getAllTelevisions() {
-        return new ResponseEntity<>(this.allTv, HttpStatus.OK);
+    public ResponseEntity<List<Television>> getAllTelevisions() {
+        List<Television> televisions = televisionRepository.findAll();
+        return ResponseEntity.ok(televisions);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Television> getTelevisionById(@PathVariable int id) {
-        try {
-            return ResponseEntity.ok(allTv.get(id));
-        } catch (IndexOutOfBoundsException ex) {
-
-            return exceptionController.handleRecordNotFoundException(new RecordNotFoundException("TV not found"));
-
-        }
+    public ResponseEntity<Television> getTelevisionById(@PathVariable Long id) {
+        return televisionRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Television> createTelevision(@RequestBody Television tv) {
-        tv.setId(UUID.randomUUID());
-        this.allTv.add(tv);
-        return new ResponseEntity<>(tv, HttpStatus.CREATED);
+    public ResponseEntity<Television> createTelevision(@RequestBody Television television) {
+        Television savedTelevision = televisionRepository.save(television);
+        return ResponseEntity.created(null).body(savedTelevision);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Television> updateTelevision(@PathVariable int id, @RequestBody Television tv) {
+    public ResponseEntity<Television> updateTelevision(@PathVariable Long id, @RequestBody Television updatedTelevision) {
+        return televisionRepository.findById(id)
+                .map(existingTelevision -> {
+                    existingTelevision.setType(updatedTelevision.getType());
+                    existingTelevision.setBrand(updatedTelevision.getBrand());
+                    // Update other fields as needed
 
-        try {
-            this.allTv.set(id, tv);
-            return new ResponseEntity<>(tv, HttpStatus.OK);
-        } catch (IndexOutOfBoundsException ex) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        }
+                    Television savedTelevision = televisionRepository.save(existingTelevision);
+                    return ResponseEntity.ok(savedTelevision);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<Television> deleteTelevision(@PathVariable int id) {
-        try {
-            Television currentVal = allTv.get(id);
-            allTv.remove(id);
-            return new ResponseEntity<>(currentVal, HttpStatus.OK);
-        } catch (IndexOutOfBoundsException ex) {
-            return exceptionController.handleRecordNotFoundException(new RecordNotFoundException("TV not found"));
-
-        }
+    public ResponseEntity<Void> deleteTelevision(@PathVariable Long id) {
+        televisionRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
