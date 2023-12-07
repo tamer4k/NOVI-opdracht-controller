@@ -1,58 +1,82 @@
 package nl.tv.NOVIopdrachtcontroller.controllers;
 
 
-import nl.tv.NOVIopdrachtcontroller.model.Television;
-import nl.tv.NOVIopdrachtcontroller.repositories.TelevisionRepository;
+import jakarta.servlet.annotation.HandlesTypes;
+import nl.tv.NOVIopdrachtcontroller.model.dto.GetTelevisionByIdDTO;
+import nl.tv.NOVIopdrachtcontroller.model.dto.TelevisionDTO;
+import nl.tv.NOVIopdrachtcontroller.model.dto.CreateTelevisionResponseDTO;
+import nl.tv.NOVIopdrachtcontroller.model.entity.Television;
+import nl.tv.NOVIopdrachtcontroller.services.TelevisionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Objects;
 
 @RequestMapping("televisions")
 @RestController
 public class TelevisionController {
     @Autowired
-   private TelevisionRepository televisionRepository;
+    private final TelevisionService televisionService;
+
+    public  TelevisionController(TelevisionService televisionService){
+        this.televisionService = televisionService;
+    }
 
     @GetMapping
-    public ResponseEntity<List<Television>> getAllTelevisions() {
-        List<Television> televisions = televisionRepository.findAll();
-        return ResponseEntity.ok(televisions);
+    public ResponseEntity<List<TelevisionDTO>> getAllTelevisions() {
+        List<TelevisionDTO> dtoList = televisionService.getAllTelevision();
+        if (!dtoList.isEmpty()) {
+            return ResponseEntity.ok(dtoList);
+        } else {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(dtoList);
+        }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Television> getTelevisionById(@PathVariable Long id) {
-        return televisionRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity <GetTelevisionByIdDTO> getTelevisionById(@PathVariable Long id){
+        GetTelevisionByIdDTO televisionDTO = televisionService.getTelevisionById(id);
+        if (televisionDTO != null) {
+            return ResponseEntity.ok(televisionDTO);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
-    public ResponseEntity<Television> createTelevision(@RequestBody Television television) {
-        Television savedTelevision = televisionRepository.save(television);
-        return ResponseEntity.created(null).body(savedTelevision);
+    public ResponseEntity<CreateTelevisionResponseDTO> createTelevision(@RequestBody TelevisionDTO televisionDTO) {
+
+        CreateTelevisionResponseDTO createdTelevisionDTO = televisionService.createTelevision(televisionDTO);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTelevisionDTO);
+
     }
+
 
     @PutMapping("/{id}")
-    public ResponseEntity<Television> updateTelevision(@PathVariable Long id, @RequestBody Television updatedTelevision) {
-        return televisionRepository.findById(id)
-                .map(existingTelevision -> {
-                    existingTelevision.setType(updatedTelevision.getType());
-                    existingTelevision.setBrand(updatedTelevision.getBrand());
-                    // Update other fields as needed
+    public ResponseEntity<TelevisionDTO> updateTelevision(@PathVariable Long id, @RequestBody TelevisionDTO televisionDTO) {
+        TelevisionDTO updatedTelevisionDTO = televisionService.updateTelevision(id, televisionDTO);
 
-                    Television savedTelevision = televisionRepository.save(existingTelevision);
-                    return ResponseEntity.ok(savedTelevision);
-                })
-                .orElse(ResponseEntity.notFound().build());
+        if (updatedTelevisionDTO != null) {
+            return ResponseEntity.status(HttpStatus.OK).body(updatedTelevisionDTO);
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(updatedTelevisionDTO);
+        }
     }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTelevision(@PathVariable Long id) {
-        televisionRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity deleteTelevision(@PathVariable Long id) {
+        boolean isDeleted = televisionService.deleteTelevision(id);
+
+        if (isDeleted == false) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Television met id " + id + " is niet gevonden");
+
+        } else {
+            return ResponseEntity.status(HttpStatus.OK).body("Television is verwijderd");
+        }
     }
+
 }

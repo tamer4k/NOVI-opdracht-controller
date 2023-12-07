@@ -1,4 +1,4 @@
-package nl.tv.NOVIopdrachtcontroller.model;
+package nl.tv.NOVIopdrachtcontroller.model.entity;
 
 public enum AvailableSize {
     SMALL(49),
